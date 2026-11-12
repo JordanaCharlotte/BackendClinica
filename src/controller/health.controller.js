@@ -1,17 +1,15 @@
-// Responde si la API está funcionando y si llega a la base de datos
-const pool = require('../config/db');
+// Responde si la API está funcionando y si llega a la base de datos.
+import pool from '../config/db.js';
 
-function estado(req, res) {
+export function estado(req, res) {
   res.json({ status: 'ok', servicio: 'BackendClinica' });
 }
 
-async function baseDeDatos(req, res) {
+export async function baseDeDatos(req, res) {
   try {
     await pool.query('SELECT 1');
     res.json({ status: 'ok', database: 'conectada' });
-  } catch (error) {
+  } catch {
     res.status(503).json({ status: 'error', database: 'sin conexión' });
   }
 }
-
-module.exports = { estado, baseDeDatos };

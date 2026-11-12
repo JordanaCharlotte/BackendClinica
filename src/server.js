@@ -1,5 +1,6 @@
 // Punto de entrada: enciende el servidor en el puerto del .env
-const app = require('./app');
+import app from './app.js';
+
 const port = process.env.PORT || 3000;
 
 app.listen(port, '0.0.0.0', () => {

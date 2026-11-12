@@ -1,9 +1,10 @@
-// Define las URL de comprobación y qué función del controlador las atiende
-const { Router } = require('express');
-const healthController = require('../controller/health.controller');
+// Define las URL de comprobación y qué función del controlador las atiende.
+import { Router } from 'express';
+import { estado, baseDeDatos } from '../controller/health.controller.js';
 
 const router = Router();
-router.get('/', healthController.estado);       // GET /api/health
-router.get('/db', healthController.baseDeDatos); // GET /api/health/db
 
-module.exports = router;
+router.get('/', estado); // GET /api/health
+router.get('/db', baseDeDatos); // GET /api/health/db
+
+export default router;
