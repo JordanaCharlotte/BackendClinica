@@ -1,7 +1,7 @@
 // Carga en la RDS los datos iniciales del frontend (src/data/).
-// Las contraseñas se guardan con hash Argon2id, nunca en texto plano.
+// Las contraseñas se guardan con hash bcrypt, nunca en texto plano.
 // Se puede ejecutar varias veces: si un dato ya existe, no lo duplica.
-import argon2 from 'argon2';
+import bcrypt from 'bcrypt';
 import pool from '../src/config/db.js';
 import usuarios from './data/usuarios.js';
 import servicios from './data/servicios.js';
@@ -27,10 +27,10 @@ async function cargar() {
   }
 
   for (const u of usuarios) {
-    const hash = await argon2.hash(u.password);
+    const hash = await bcrypt.hash(u.password, 10);
     await pool.query(
       `INSERT INTO usuarios (run, nombre, apellidos, correo, telefono, password_hash, rol)
-       VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT (correo) DO NOTHING`,
+       VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT (correo) DO UPDATE SET password_hash = EXCLUDED.password_hash`,
       [u.run, u.nombre, u.apellidos, u.correo, u.telefono, hash, u.rol],
     );
   }
