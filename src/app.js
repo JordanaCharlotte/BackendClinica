@@ -25,4 +25,14 @@ app.use('/api/nutricionistas', nutricionistaRoute);
 // Si la ruta no existe: 404
 app.use((req, res) => res.status(404).json({ error: 'Recurso no encontrado' }));
 
+// Errores inesperados: responde en JSON sin mostrar detalles internos del servidor.
+// Express sabe que es un manejador de errores porque recibe 4 parámetros.
+app.use((error, req, res, next) => {
+  if (error.type === 'entity.parse.failed') {
+    return res.status(400).json({ error: 'El cuerpo de la solicitud no es un JSON válido.' });
+  }
+  console.error(error);
+  res.status(500).json({ error: 'Error interno del servidor.' });
+});
+
 export default app;

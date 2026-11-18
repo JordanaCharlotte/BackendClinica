@@ -31,6 +31,11 @@ export async function actualizarUsuario(id, cambios) {
     return { ok: false, estado: 409, error: 'Ya existe una cuenta con ese RUN.', campo: 'run' };
   }
 
+  // No dejar a la clínica sin administradores.
+  if (actual.rol === 'admin' && datos.rol !== 'admin' && (await Usuario.contarAdmins()) === 1) {
+    return { ok: false, estado: 409, error: 'No puedes quitarle el rol al único administrador.' };
+  }
+
   const usuario = await Usuario.actualizarUsuario(id, datos);
   return { ok: true, estado: 200, usuario };
 }
