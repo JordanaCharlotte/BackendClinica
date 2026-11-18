@@ -187,3 +187,23 @@ El flujo del módulo es: `Ruta → Middleware de autenticación → Controlador 
 
 
 
+
+## CRUD implementados
+
+| Recurso | Crear | Listar / Ver | Modificar | Eliminar | Responsable |
+|---|---|---|---|---|---|
+| Usuarios | POST /api/auth/register | GET /api/usuarios | PUT /api/usuarios/:id | DELETE /api/usuarios/:id | Jordana |
+| Citas | POST /api/citas | GET /api/citas y GET /api/citas/:id | PATCH /api/citas/:id/reprogramar | DELETE /api/citas/:id (la deja cancelada) | Vicente |
+| Servicios | — | GET /api/servicios y GET /api/servicios/:id | — | — | Davis |
+| Nutricionistas | — | GET /api/nutricionistas y GET /api/nutricionistas/:id | — | — | Davis |
+
+### Administración de usuarios
+
+Listar, modificar y eliminar son solo para administradores (usan verificarToken y permitirRoles('admin')). Siguen las mismas reglas del frontend:
+
+- Si la contraseña viene vacía al modificar, se mantiene la actual.
+- El correo y el RUN no se pueden repetir (responde 409).
+- No se puede eliminar al único administrador (responde 409).
+- No se puede eliminar a un usuario que tiene citas registradas (responde 409).
+
+Sin token responde **401**; con un usuario que no es admin responde **403**.
