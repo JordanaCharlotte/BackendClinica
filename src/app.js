@@ -5,7 +5,8 @@ import cors from 'cors';
 import healthRoute from './route/health.route.js';
 import authRoute from './route/auth.route.js';
 import citaRoute from './route/cita.route.js';
-
+import servicioRoute from './route/servicio.route.js';
+import nutricionistaRoute from './route/nutricionista.route.js';
 
 const app = express();
 
@@ -15,6 +16,8 @@ app.use(express.json()); // lee el cuerpo JSON de las solicitudes
 app.use('/api/health', healthRoute);
 app.use('/api/auth', authRoute);
 app.use('/api/citas', citaRoute);
+app.use('/api/servicios', servicioRoute);
+app.use('/api/nutricionistas', nutricionistaRoute);
 
 
 // Si la ruta no existe: 404
