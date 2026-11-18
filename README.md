@@ -130,6 +130,39 @@ Las citas se almacenan en la tabla `citas` de PostgreSQL. Al cancelar una cita n
 
 La funcionalidad se organiza en capas: `cita.route.js` define las rutas y aplica la autenticación y los permisos; `cita.controller.js` recibe las solicitudes y envía las respuestas; `cita.service.js` contiene las validaciones y reglas de negocio; y `cita.repository.js` ejecuta las consultas SQL sobre PostgreSQL.
 
+
+## Módulo de Servicios y Nutricionistas
+
+Se implementó el backend individual para el catálogo de servicios y nutricionistas de la clínica NutriVida. El módulo permite consultar información almacenada en PostgreSQL mediante una API REST desarrollada con Node.js y Express.
+
+### Endpoints implementados
+
+| Método | Endpoint | Descripción |
+|---|---|---|
+| GET | `/api/servicios` | Obtiene todos los servicios registrados |
+| GET | `/api/servicios/:id` | Obtiene un servicio por su ID |
+| GET | `/api/nutricionistas` | Obtiene todos los nutricionistas registrados |
+| GET | `/api/nutricionistas/:id` | Obtiene un nutricionista por su ID |
+
+### Validaciones realizadas
+
+- Se valida que el ID de un servicio sea numérico y positivo.
+- Se valida que el servicio exista.
+- Se valida que el nutricionista exista.
+- Se responde con estado `404 Not Found` cuando el registro no existe.
+- Se responde con estado `400 Bad Request` cuando el ID del servicio no es válido.
+- Se valida la disponibilidad de los servicios al consultar el detalle.
+- Las rutas del catálogo son públicas y no requieren autenticación.
+
+### Arquitectura utilizada
+
+```text
+Frontend React/Vite
+        ↓
+Node.js + Express en EC2
+        ↓
+PostgreSQL en Amazon RDS
+
 El flujo del módulo es: `Ruta → Middleware de autenticación → Controlador → Servicio → Repositorio → PostgreSQL`.
 
 
