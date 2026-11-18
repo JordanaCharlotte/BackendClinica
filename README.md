@@ -74,7 +74,7 @@ sequenceDiagram
 ```
 
 
-## Citas
+## Módulo de citas
 
 | Método | Ruta | ¿Necesita token? | ¿Quién puede usarla? | Qué hace |
 |---|---|---|---|---|
@@ -84,18 +84,13 @@ sequenceDiagram
 | PATCH | `/api/citas/:id/reprogramar` | Sí | Solo administrador | Cambia la fecha u hora de una cita |
 | DELETE | `/api/citas/:id` | Sí | Solo administrador | Cambia el estado de la cita a cancelada |
 
-El token se envía en cada solicitud protegida mediante el encabezado:
+El token se envía en cada solicitud protegida mediante el encabezado `Authorization: Bearer <token>`. Para crear una cita se deben enviar el servicio, el nutricionista, la fecha, la hora, el nombre, el correo y el precio. El usuario asociado se obtiene desde el token JWT mediante `req.usuario.id`, por lo que no se recibe directamente desde el frontend. El módulo valida que los campos obligatorios estén completos y que la fecha no sea anterior al día actual.
 
-`Authorization: Bearer <token>`
+Las citas se almacenan en la tabla `citas` de PostgreSQL. Al cancelar una cita no se elimina el registro de la base de datos, sino que su estado cambia a `cancelada`.
 
-Para crear una cita se debe enviar el servicio, el nutricionista, la fecha, la hora, el nombre, el correo y el precio. El usuario asociado no se recibe desde el frontend, sino que se obtiene desde el token JWT mediante `req.usuario.id`. De esta forma, la cita queda relacionada con el usuario autenticado.
+La funcionalidad se organiza en capas: `cita.route.js` define las rutas y aplica la autenticación y los permisos; `cita.controller.js` recibe las solicitudes y envía las respuestas; `cita.service.js` contiene las validaciones y reglas de negocio; y `cita.repository.js` ejecuta las consultas SQL sobre PostgreSQL.
 
-El módulo valida que los campos obligatorios estén completos y que la fecha no sea anterior al día actual. Las citas se almacenan en la tabla `citas` de PostgreSQL. Al cancelar una cita no se elimina el registro de la base de datos, sino que su estado cambia a `cancelada`.
+El flujo del módulo es: `Ruta → Middleware de autenticación → Controlador → Servicio → Repositorio → PostgreSQL`.
 
-La funcionalidad se organiza en capas. `cita.route.js` define las rutas y aplica la autenticación y los permisos; `cita.controller.js` recibe las solicitudes y envía las respuestas; `cita.service.js` contiene las validaciones y reglas de negocio; y `cita.repository.js` ejecuta las consultas SQL sobre PostgreSQL.
-
-El flujo del módulo es:
-
-`Ruta → Middleware de autenticación → Controlador → Servicio → Repositorio → PostgreSQL`
 
 
