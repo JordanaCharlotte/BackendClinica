@@ -2,6 +2,46 @@
 
 Enlace para Frontend del proyecto: https://github.com/JordanaCharlotte/Clinica.git
 
+## Integrantes
+
+- Jordana Vasquez
+- Davis Monsalvez
+- Vicente Jaramillo
+
+## Nombre del proyecto
+
+Clínica NutriVida
+
+## Descripción
+
+La clínica permite consultar servicios nutricionales y agendar citas con profesionales. El frontend está desarrollado con React y Vite. En la versión anterior, los datos se manejaban principalmente mediante datos simulados y `localStorage`. En esta etapa se implementa un backend para centralizar la información, autenticar usuarios y conectarse con PostgreSQL.
+
+## Tecnología elegida
+
+Elegimos Node.js y Express porque el frontend de Clínica NutriVida ya está desarrollado en JavaScript. Esto permite mantener el mismo lenguaje en frontend y backend y facilita la migración de los servicios actuales hacia una API.
+
+## Arquitectura
+
+La arquitectura utiliza un backend desarrollado con Node.js y Express, conectado a una base de datos PostgreSQL en Amazon RDS. La estructura planificada es:
+
+`Backend Node.js/Express → Amazon RDS PostgreSQL`
+
+## Entidades
+
+Las entidades principales son:
+
+- `usuarios`: personas que utilizan el sistema, incluyendo clientes y administradores.
+- `servicios`: consultas, planes, evaluaciones y talleres disponibles.
+- `nutricionistas`: profesionales que atienden las citas.
+- `citas`: reservas realizadas por usuarios para un servicio y un nutricionista.
+
+
+
+
+
+
+
+
 ## Autenticación
 
 | Método | Ruta | ¿Necesita token? | Qué hace |
