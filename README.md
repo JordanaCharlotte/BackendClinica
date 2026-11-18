@@ -12,6 +12,46 @@ Repositorio del frontend: https://github.com/JordanaCharlotte/Clinica.git
 3. Cargar los datos de prueba con `npm run seed`
 4. Iniciar el servidor con `npm start`
 
+## Integrantes
+
+- Jordana Vasquez
+- Davis Monsalvez
+- Vicente Jaramillo
+
+## Nombre del proyecto
+
+Clínica NutriVida
+
+## Descripción
+
+La clínica permite consultar servicios nutricionales y agendar citas con profesionales. El frontend está desarrollado con React y Vite. En la versión anterior, los datos se manejaban principalmente mediante datos simulados y `localStorage`. En esta etapa se implementa un backend para centralizar la información, autenticar usuarios y conectarse con PostgreSQL.
+
+## Tecnología elegida
+
+Elegimos Node.js y Express porque el frontend de Clínica NutriVida ya está desarrollado en JavaScript. Esto permite mantener el mismo lenguaje en frontend y backend y facilita la migración de los servicios actuales hacia una API.
+
+## Arquitectura
+
+La arquitectura utiliza un backend desarrollado con Node.js y Express, conectado a una base de datos PostgreSQL en Amazon RDS. La estructura planificada es:
+
+`Backend Node.js/Express → Amazon RDS PostgreSQL`
+
+## Entidades
+
+Las entidades principales son:
+
+- `usuarios`: personas que utilizan el sistema, incluyendo clientes y administradores.
+- `servicios`: consultas, planes, evaluaciones y talleres disponibles.
+- `nutricionistas`: profesionales que atienden las citas.
+- `citas`: reservas realizadas por usuarios para un servicio y un nutricionista.
+
+
+
+
+
+
+
+
 ## Autenticación
 
 Esta parte la hice yo (Jordana). Incluye el registro, el login y la ruta para saber quién inició sesión.
@@ -92,3 +132,58 @@ sequenceDiagram
         R-->>F: 200 { usuario }
     end
 ```
+
+
+## Módulo de citas
+
+| Método | Ruta | ¿Necesita token? | ¿Quién puede usarla? | Qué hace |
+|---|---|---|---|---|
+| POST | `/api/citas` | Sí | Usuario autenticado | Crea una nueva cita para el usuario que inició sesión |
+| GET | `/api/citas` | Sí | Usuario autenticado | Lista las citas propias; el administrador puede ver todas |
+| GET | `/api/citas/:id` | Sí | Usuario autenticado | Obtiene una cita específica |
+| PATCH | `/api/citas/:id/reprogramar` | Sí | Solo administrador | Cambia la fecha u hora de una cita |
+| DELETE | `/api/citas/:id` | Sí | Solo administrador | Cambia el estado de la cita a cancelada |
+
+El token se envía en cada solicitud protegida mediante el encabezado `Authorization: Bearer <token>`. Para crear una cita se deben enviar el servicio, el nutricionista, la fecha, la hora, el nombre, el correo y el precio. El usuario asociado se obtiene desde el token JWT mediante `req.usuario.id`, por lo que no se recibe directamente desde el frontend. El módulo valida que los campos obligatorios estén completos y que la fecha no sea anterior al día actual.
+
+Las citas se almacenan en la tabla `citas` de PostgreSQL. Al cancelar una cita no se elimina el registro de la base de datos, sino que su estado cambia a `cancelada`.
+
+La funcionalidad se organiza en capas: `cita.route.js` define las rutas y aplica la autenticación y los permisos; `cita.controller.js` recibe las solicitudes y envía las respuestas; `cita.service.js` contiene las validaciones y reglas de negocio; y `cita.repository.js` ejecuta las consultas SQL sobre PostgreSQL.
+
+
+## Módulo de Servicios y Nutricionistas
+
+Se implementó el backend individual para el catálogo de servicios y nutricionistas de la clínica NutriVida. El módulo permite consultar información almacenada en PostgreSQL mediante una API REST desarrollada con Node.js y Express.
+
+### Endpoints implementados
+
+| Método | Endpoint | Descripción |
+|---|---|---|
+| GET | `/api/servicios` | Obtiene todos los servicios registrados |
+| GET | `/api/servicios/:id` | Obtiene un servicio por su ID |
+| GET | `/api/nutricionistas` | Obtiene todos los nutricionistas registrados |
+| GET | `/api/nutricionistas/:id` | Obtiene un nutricionista por su ID |
+
+### Validaciones realizadas
+
+- Se valida que el ID de un servicio sea numérico y positivo.
+- Se valida que el servicio exista.
+- Se valida que el nutricionista exista.
+- Se responde con estado `404 Not Found` cuando el registro no existe.
+- Se responde con estado `400 Bad Request` cuando el ID del servicio no es válido.
+- Se valida la disponibilidad de los servicios al consultar el detalle.
+- Las rutas del catálogo son públicas y no requieren autenticación.
+
+### Arquitectura utilizada
+
+```text
+Frontend React/Vite
+        ↓
+Node.js + Express en EC2
+        ↓
+PostgreSQL en Amazon RDS
+
+El flujo del módulo es: `Ruta → Middleware de autenticación → Controlador → Servicio → Repositorio → PostgreSQL`.
+
+
+
