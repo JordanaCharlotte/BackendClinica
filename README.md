@@ -72,3 +72,30 @@ sequenceDiagram
         R-->>F: 200 { usuario }
     end
 ```
+
+
+## Citas
+
+| Método | Ruta | ¿Necesita token? | ¿Quién puede usarla? | Qué hace |
+|---|---|---|---|---|
+| POST | `/api/citas` | Sí | Usuario autenticado | Crea una nueva cita para el usuario que inició sesión |
+| GET | `/api/citas` | Sí | Usuario autenticado | Lista las citas propias; el administrador puede ver todas |
+| GET | `/api/citas/:id` | Sí | Usuario autenticado | Obtiene una cita específica |
+| PATCH | `/api/citas/:id/reprogramar` | Sí | Solo administrador | Cambia la fecha u hora de una cita |
+| DELETE | `/api/citas/:id` | Sí | Solo administrador | Cambia el estado de la cita a cancelada |
+
+El token se envía en cada solicitud protegida mediante el encabezado:
+
+`Authorization: Bearer <token>`
+
+Para crear una cita se debe enviar el servicio, el nutricionista, la fecha, la hora, el nombre, el correo y el precio. El usuario asociado no se recibe desde el frontend, sino que se obtiene desde el token JWT mediante `req.usuario.id`. De esta forma, la cita queda relacionada con el usuario autenticado.
+
+El módulo valida que los campos obligatorios estén completos y que la fecha no sea anterior al día actual. Las citas se almacenan en la tabla `citas` de PostgreSQL. Al cancelar una cita no se elimina el registro de la base de datos, sino que su estado cambia a `cancelada`.
+
+La funcionalidad se organiza en capas. `cita.route.js` define las rutas y aplica la autenticación y los permisos; `cita.controller.js` recibe las solicitudes y envía las respuestas; `cita.service.js` contiene las validaciones y reglas de negocio; y `cita.repository.js` ejecuta las consultas SQL sobre PostgreSQL.
+
+El flujo del módulo es:
+
+`Ruta → Middleware de autenticación → Controlador → Servicio → Repositorio → PostgreSQL`
+
+
