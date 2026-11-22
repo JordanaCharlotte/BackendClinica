@@ -17,10 +17,14 @@ function validarDatosCita(datos) {
     return 'La hora es obligatoria.';
   }
 
-  const fechaSeleccionada = new Date(datos.fecha + 'T00:00:00');
+  const fechaSeleccionada = new Date(`${datos.fecha}T00:00:00`);
   const hoy = new Date();
 
   hoy.setHours(0, 0, 0, 0);
+
+  if (Number.isNaN(fechaSeleccionada.getTime())) {
+    return 'La fecha no es válida.';
+  }
 
   if (fechaSeleccionada < hoy) {
     return 'No puedes agendar una cita en una fecha anterior a hoy.';
@@ -52,7 +56,37 @@ export async function crearCita(datos) {
     };
   }
 
-  const cita = await Cita.crearCita(datos);
+  let cita;
+
+  try {
+    cita = await Cita.crearCita(datos);
+  } catch (error) {
+    if (error.code === 'SERVICIO_NO_EXISTE') {
+      return {
+        ok: false,
+        estado: 404,
+        error: 'El servicio no existe.',
+      };
+    }
+
+    if (error.code === 'SERVICIO_NO_DISPONIBLE') {
+      return {
+        ok: false,
+        estado: 409,
+        error: 'El servicio no está disponible o no tiene cupos.',
+      };
+    }
+
+    if (error.code === 'NUTRICIONISTA_NO_EXISTE') {
+      return {
+        ok: false,
+        estado: 404,
+        error: 'El nutricionista no existe.',
+      };
+    }
+
+    throw error;
+  }
 
   return {
     ok: true,
@@ -78,6 +112,14 @@ export async function obtenerCitas(usuarioId, rol) {
 }
 
 export async function obtenerCita(id, usuarioId, rol) {
+  if (!Number.isInteger(id) || id <= 0) {
+    return {
+      ok: false,
+      estado: 400,
+      error: 'El identificador de la cita no es válido.',
+    };
+  }
+
   const cita = await Cita.buscarCitaPorId(id);
 
   if (!cita) {
@@ -104,6 +146,14 @@ export async function obtenerCita(id, usuarioId, rol) {
 }
 
 export async function reprogramarCita(id, datos) {
+  if (!Number.isInteger(id) || id <= 0) {
+    return {
+      ok: false,
+      estado: 400,
+      error: 'El identificador de la cita no es válido.',
+    };
+  }
+
   if (!datos.fecha && !datos.hora) {
     return {
       ok: false,
@@ -113,10 +163,18 @@ export async function reprogramarCita(id, datos) {
   }
 
   if (datos.fecha) {
-    const fechaSeleccionada = new Date(datos.fecha + 'T00:00:00');
+    const fechaSeleccionada = new Date(`${datos.fecha}T00:00:00`);
     const hoy = new Date();
 
     hoy.setHours(0, 0, 0, 0);
+
+    if (Number.isNaN(fechaSeleccionada.getTime())) {
+      return {
+        ok: false,
+        estado: 400,
+        error: 'La fecha no es válida.',
+      };
+    }
 
     if (fechaSeleccionada < hoy) {
       return {

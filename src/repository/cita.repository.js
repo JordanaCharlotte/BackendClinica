@@ -10,34 +10,92 @@ export async function crearCita({
   correo,
   precio,
 }) {
-  const { rows } = await pool.query(
-    `INSERT INTO citas
-      (usuario_id, servicio_id, nutricionista_id, fecha, hora, nombre, correo, precio)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-     RETURNING
-       id,
-       usuario_id,
-       servicio_id,
-       nutricionista_id,
-       fecha,
-       hora,
-       nombre,
-       correo,
-       precio,
-       estado`,
-    [
-      usuarioId,
-      servicioId,
-      nutricionistaId,
-      fecha,
-      hora,
-      nombre,
-      correo,
-      precio,
-    ],
-  );
+  const client = await pool.connect();
 
-  return rows[0];
+  try {
+    await client.query('BEGIN');
+
+    const servicioResult = await client.query(
+      `SELECT id, disponibilidad, cupos
+       FROM servicios
+       WHERE id = $1
+       FOR UPDATE`,
+      [servicioId],
+    );
+
+    if (servicioResult.rows.length === 0) {
+      const error = new Error('El servicio no existe.');
+      error.code = 'SERVICIO_NO_EXISTE';
+      throw error;
+    }
+
+    const servicio = servicioResult.rows[0];
+
+    if (!servicio.disponibilidad || servicio.cupos <= 0) {
+      const error = new Error(
+        'El servicio no está disponible o no tiene cupos.',
+      );
+      error.code = 'SERVICIO_NO_DISPONIBLE';
+      throw error;
+    }
+
+    const nutricionistaResult = await client.query(
+      `SELECT id
+       FROM nutricionistas
+       WHERE id = $1`,
+      [nutricionistaId],
+    );
+
+    if (nutricionistaResult.rows.length === 0) {
+      const error = new Error('El nutricionista no existe.');
+      error.code = 'NUTRICIONISTA_NO_EXISTE';
+      throw error;
+    }
+
+    const citaResult = await client.query(
+      `INSERT INTO citas
+        (usuario_id, servicio_id, nutricionista_id, fecha, hora, nombre, correo, precio)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+       RETURNING
+         id,
+         usuario_id,
+         servicio_id,
+         nutricionista_id,
+         fecha,
+         hora,
+         nombre,
+         correo,
+         precio,
+         estado`,
+      [
+        usuarioId,
+        servicioId,
+        nutricionistaId,
+        fecha,
+        hora,
+        nombre,
+        correo,
+        precio,
+      ],
+    );
+
+    await client.query(
+      `UPDATE servicios
+       SET cupos = cupos - 1,
+           disponibilidad = (cupos - 1 > 0)
+       WHERE id = $1`,
+      [servicioId],
+    );
+
+    await client.query('COMMIT');
+
+    return citaResult.rows[0];
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    client.release();
+  }
 }
 
 export async function buscarCitasPorUsuario(usuarioId) {
