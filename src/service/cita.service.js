@@ -1,20 +1,22 @@
 import * as Cita from '../repository/cita.repository.js';
+import * as Usuario from '../repository/usuario.repository.js';
+import * as Servicio from '../repository/servicio.repository.js';
+import * as Nutricionista from '../repository/nutricionista.repository.js';
 
-function validarDatosCita(datos) {
-  if (!datos.servicioId) {
-    return 'El servicio es obligatorio.';
-  }
 
-  if (!datos.nutricionistaId) {
-    return 'El nutricionista es obligatorio.';
-  }
+function obtenerFechaChile() {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Santiago',
+  }).format(new Date());
+}
 
-  if (!datos.fecha) {
+function validarFecha(fecha) {
+  if (typeof fecha !== 'string' || fecha.length === 0) {
     return 'La fecha es obligatoria.';
   }
 
-  if (!datos.hora) {
-    return 'La hora es obligatoria.';
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha)) {
+    return 'La fecha debe tener el formato AAAA-MM-DD.';
   }
 
   const fechaSeleccionada = new Date(`${datos.fecha}T00:00:00`);
@@ -30,29 +32,103 @@ function validarDatosCita(datos) {
     return 'No puedes agendar una cita en una fecha anterior a hoy.';
   }
 
-  if (!datos.nombre) {
-    return 'El nombre es obligatorio.';
+  return null;
+}
+
+function validarHora(hora) {
+  if (typeof hora !== 'string' || hora.length === 0) {
+    return 'La hora es obligatoria.';
   }
 
-  if (!datos.correo) {
-    return 'El correo es obligatorio.';
+  if (!/^\d{2}:\d{2}$/.test(hora)) {
+    return 'La hora debe tener el formato HH:MM.';
   }
 
-  if (datos.precio === undefined || datos.precio === null) {
-    return 'El precio es obligatorio.';
+  const partes = hora.split(':');
+  const horas = Number(partes[0]);
+  const minutos = Number(partes[1]);
+
+  if (horas > 23 || minutos > 59) {
+    return 'La hora no es válida.';
   }
 
   return null;
 }
 
-export async function crearCita(datos) {
-  const error = validarDatosCita(datos);
+function validarServicioId(servicioId) {
+  const id = Number(servicioId);
 
-  if (error) {
+  if (!Number.isInteger(id) || id <= 0) {
+    return null;
+  }
+
+  return id;
+}
+
+export async function crearCita(datos) {
+  const servicioId = validarServicioId(datos.servicioId);
+
+  if (servicioId === null) {
     return {
       ok: false,
       estado: 400,
-      error,
+      error: 'El identificador del servicio no es válido.',
+    };
+  }
+
+  if (!datos.nutricionistaId) {
+    return {
+      ok: false,
+      estado: 400,
+      error: 'El nutricionista es obligatorio.',
+    };
+  }
+
+  const errorFecha = validarFecha(datos.fecha);
+
+  if (errorFecha) {
+    return {
+      ok: false,
+      estado: 400,
+      error: errorFecha,
+    };
+  }
+
+  const errorHora = validarHora(datos.hora);
+
+  if (errorHora) {
+    return {
+      ok: false,
+      estado: 400,
+      error: errorHora,
+    };
+  }
+
+  const usuario = await Usuario.buscarPorId(datos.usuarioId);
+
+  if (!usuario) {
+    return {
+      ok: false,
+      estado: 404,
+      error: 'El usuario autenticado no existe.',
+    };
+  }
+
+  const servicio = await Servicio.buscarServicioPorId(servicioId);
+
+  if (!servicio) {
+    return {
+      ok: false,
+      estado: 404,
+      error: 'El servicio no existe.',
+    };
+  }
+
+  if (!servicio.disponibilidad) {
+    return {
+      ok: false,
+      estado: 409,
+      error: 'El servicio no está disponible.',
     };
   }
 
