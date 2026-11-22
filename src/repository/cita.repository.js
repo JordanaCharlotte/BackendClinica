@@ -10,26 +10,32 @@ export async function crearCita({
   correo,
   precio,
 }) {
-  const client = await pool.connect();
-
-  try {
-    await client.query('BEGIN');
-
-    const servicioResult = await client.query(
-      `SELECT id, disponibilidad, cupos
-       FROM servicios
-       WHERE id = $1
-       FOR UPDATE`,
-      [servicioId],
-    );
-
-    if (servicioResult.rows.length === 0) {
-      const error = new Error('El servicio no existe.');
-      error.code = 'SERVICIO_NO_EXISTE';
-      throw error;
-    }
-
-    const servicio = servicioResult.rows[0];
+  const { rows } = await pool.query(
+    `INSERT INTO citas
+      (usuario_id, servicio_id, nutricionista_id, fecha, hora, nombre, correo, precio)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+     RETURNING
+       id,
+       usuario_id,
+       servicio_id,
+       nutricionista_id,
+       fecha::text AS fecha,
+       hora,
+       nombre,
+       correo,
+       precio,
+       estado`,
+    [
+      usuarioId,
+      servicioId,
+      nutricionistaId,
+      fecha,
+      hora,
+      nombre,
+      correo,
+      precio,
+    ],
+  );
 
     if (!servicio.disponibilidad || servicio.cupos <= 0) {
       const error = new Error(
@@ -107,7 +113,7 @@ export async function buscarCitasPorUsuario(usuarioId) {
        s.nombre AS servicio,
        c.nutricionista_id,
        n.nombre AS nutricionista,
-       c.fecha,
+       c.fecha::text AS fecha,
        c.hora,
        c.nombre,
        c.correo,
@@ -135,7 +141,7 @@ export async function buscarTodasLasCitas() {
        s.nombre AS servicio,
        c.nutricionista_id,
        n.nombre AS nutricionista,
-       c.fecha,
+       c.fecha::text AS fecha,
        c.hora,
        c.nombre,
        c.correo,
@@ -155,6 +161,7 @@ export async function existeHorario(
   nutricionistaId,
   fecha,
   hora,
+  idExcluir = null,
 ) {
   const resultado = await pool.query(
     'SELECT id ' +
@@ -162,12 +169,14 @@ export async function existeHorario(
       'WHERE nutricionista_id = $1 ' +
       'AND fecha = $2 ' +
       'AND hora = $3 ' +
-      'AND estado <> $4',
+      'AND estado <> $4 ' +
+      'AND ($5 IS NULL OR id <> $5)',
     [
       nutricionistaId,
       fecha,
       hora,
       'cancelada',
+      idExcluir,
     ],
   );
 
@@ -184,7 +193,7 @@ export async function buscarCitaPorId(id) {
        s.nombre AS servicio,
        c.nutricionista_id,
        n.nombre AS nutricionista,
-       c.fecha,
+       c.fecha::text AS fecha,
        c.hora,
        c.nombre,
        c.correo,
@@ -212,7 +221,7 @@ export async function actualizarCita(id, { fecha, hora, estado }) {
        usuario_id,
        servicio_id,
        nutricionista_id,
-       fecha,
+       fecha::text AS fecha,
        hora,
        nombre,
        correo,

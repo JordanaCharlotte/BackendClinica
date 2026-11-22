@@ -187,18 +187,10 @@ export async function obtenerCitas(usuarioId, rol) {
   };
 }
 
-export async function obtenerCita(id, usuarioId, rol) {
-  if (!Number.isInteger(id) || id <= 0) {
-    return {
-      ok: false,
-      estado: 400,
-      error: 'El identificador de la cita no es válido.',
-    };
-  }
+export async function reprogramarCita(id, datos) {
+  const citaActual = await Cita.buscarCitaPorId(id);
 
-  const cita = await Cita.buscarCitaPorId(id);
-
-  if (!cita) {
+  if (!citaActual) {
     return {
       ok: false,
       estado: 404,
@@ -206,27 +198,11 @@ export async function obtenerCita(id, usuarioId, rol) {
     };
   }
 
-  if (rol !== 'admin' && cita.usuario_id !== usuarioId) {
+  if (citaActual.estado === 'cancelada') {
     return {
       ok: false,
-      estado: 403,
-      error: 'No tienes permiso para ver esta cita.',
-    };
-  }
-
-  return {
-    ok: true,
-    estado: 200,
-    cita,
-  };
-}
-
-export async function reprogramarCita(id, datos) {
-  if (!Number.isInteger(id) || id <= 0) {
-    return {
-      ok: false,
-      estado: 400,
-      error: 'El identificador de la cita no es válido.',
+      estado: 409,
+      error: 'No se puede reprogramar una cita cancelada.',
     };
   }
 
@@ -239,26 +215,45 @@ export async function reprogramarCita(id, datos) {
   }
 
   if (datos.fecha) {
-    const fechaSeleccionada = new Date(`${datos.fecha}T00:00:00`);
-    const hoy = new Date();
+    const errorFecha = validarFecha(datos.fecha);
 
-    hoy.setHours(0, 0, 0, 0);
-
-    if (Number.isNaN(fechaSeleccionada.getTime())) {
+    if (errorFecha) {
       return {
         ok: false,
         estado: 400,
-        error: 'La fecha no es válida.',
+        error: errorFecha,
       };
     }
+  }
 
-    if (fechaSeleccionada < hoy) {
+  if (datos.hora) {
+    const errorHora = validarHora(datos.hora);
+
+    if (errorHora) {
       return {
         ok: false,
         estado: 400,
-        error: 'No puedes reprogramar una cita para una fecha anterior a hoy.',
+        error: errorHora,
       };
     }
+  }
+
+    const nuevaFecha = datos.fecha || citaActual.fecha;
+  const nuevaHora = datos.hora || citaActual.hora;
+
+  const horarioOcupado = await Cita.existeHorario(
+    citaActual.nutricionista_id,
+    nuevaFecha,
+    nuevaHora,
+    id,
+  );
+
+  if (horarioOcupado) {
+    return {
+      ok: false,
+      estado: 409,
+      error: 'El nutricionista ya tiene otra cita en ese horario.',
+    };
   }
 
   const cita = await Cita.actualizarCita(id, {
@@ -266,14 +261,6 @@ export async function reprogramarCita(id, datos) {
     hora: datos.hora,
     estado: 'reprogramada',
   });
-
-  if (!cita) {
-    return {
-      ok: false,
-      estado: 404,
-      error: 'La cita no existe.',
-    };
-  }
 
   return {
     ok: true,
