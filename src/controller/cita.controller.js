@@ -102,10 +102,18 @@ export async function reprogramarCita(req, res) {
 
 export async function cancelarCita(req, res) {
   try {
-    const resultado = Number(req.params.id);
+    const id = Number(req.params.id);
 
     if (!Number.isInteger(id) || id <= 0) {
       return res.status(400).json({
+        error: 'El id de la cita no es válido.',
+      });
+    }
+
+    const resultado = await citaService.cancelarCita(id);
+
+    if (!resultado.ok) {
+      return res.status(resultado.estado).json({
         error: resultado.error,
       });
     }
@@ -113,8 +121,7 @@ export async function cancelarCita(req, res) {
     return res.status(resultado.estado).json(resultado.cita);
   } catch (error) {
     console.error(error);
-    
-    
+
     return res.status(500).json({
       error: 'No se pudo cancelar la cita.',
     });
