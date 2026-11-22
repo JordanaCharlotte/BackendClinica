@@ -28,15 +28,6 @@ export async function obtenerServicio(id) {
       error: 'El servicio no existe.',
     };
   }
-
-  if (!servicio.disponibilidad) {
-    return {
-      ok: false,
-      estado: 409,
-      error: 'El servicio no está disponible.',
-    };
-  }
-
   return {
     ok: true,
     estado: 200,

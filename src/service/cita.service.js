@@ -19,24 +19,16 @@ function validarFecha(fecha) {
     return 'La fecha debe tener el formato AAAA-MM-DD.';
   }
 
-  const partes = fecha.split('-');
-  const anio = Number(partes[0]);
-  const mes = Number(partes[1]);
-  const dia = Number(partes[2]);
+  const fechaSeleccionada = new Date(`${datos.fecha}T00:00:00`);
+  const hoy = new Date();
 
-  const fechaComprobacion = new Date(
-    Date.UTC(anio, mes - 1, dia),
-  );
+  hoy.setHours(0, 0, 0, 0);
 
-  if (
-    fechaComprobacion.getUTCFullYear() !== anio ||
-    fechaComprobacion.getUTCMonth() !== mes - 1 ||
-    fechaComprobacion.getUTCDate() !== dia
-  ) {
+  if (Number.isNaN(fechaSeleccionada.getTime())) {
     return 'La fecha no es válida.';
   }
 
-  if (fecha < obtenerFechaChile()) {
+  if (fechaSeleccionada < hoy) {
     return 'No puedes agendar una cita en una fecha anterior a hoy.';
   }
 
@@ -140,53 +132,37 @@ export async function crearCita(datos) {
     };
   }
 
-  if (servicio.cupos <= 0) {
-    return {
-      ok: false,
-      estado: 409,
-      error: 'El servicio no tiene cupos disponibles.',
-    };
+  let cita;
+
+  try {
+    cita = await Cita.crearCita(datos);
+  } catch (error) {
+    if (error.code === 'SERVICIO_NO_EXISTE') {
+      return {
+        ok: false,
+        estado: 404,
+        error: 'El servicio no existe.',
+      };
+    }
+
+    if (error.code === 'SERVICIO_NO_DISPONIBLE') {
+      return {
+        ok: false,
+        estado: 409,
+        error: 'El servicio no está disponible o no tiene cupos.',
+      };
+    }
+
+    if (error.code === 'NUTRICIONISTA_NO_EXISTE') {
+      return {
+        ok: false,
+        estado: 404,
+        error: 'El nutricionista no existe.',
+      };
+    }
+
+    throw error;
   }
-
-  const nutricionista =
-    await Nutricionista.buscarNutricionistaPorId(
-      datos.nutricionistaId,
-    );
-
-  if (!nutricionista) {
-    return {
-      ok: false,
-      estado: 404,
-      error: 'El nutricionista no existe.',
-    };
-  }
-
-  const horarioOcupado = await Cita.existeHorario(
-  nutricionista.id,
-  datos.fecha,
-  datos.hora,
-);
-
-if (horarioOcupado) {
-  return {
-    ok: false,
-    estado: 409,
-    error: 'El nutricionista ya tiene una cita en ese horario.',
-  };
-}
-
-  const datosCita = {
-    usuarioId: usuario.id,
-    servicioId: servicio.id,
-    nutricionistaId: nutricionista.id,
-    fecha: datos.fecha,
-    hora: datos.hora,
-    nombre: usuario.nombre + ' ' + usuario.apellidos,
-    correo: usuario.correo,
-    precio: servicio.precio,
-  };
-
-  const cita = await Cita.crearCita(datosCita);
 
   return {
     ok: true,
