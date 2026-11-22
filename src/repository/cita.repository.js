@@ -19,7 +19,7 @@ export async function crearCita({
        usuario_id,
        servicio_id,
        nutricionista_id,
-       fecha,
+       fecha::text AS fecha,
        hora,
        nombre,
        correo,
@@ -49,7 +49,7 @@ export async function buscarCitasPorUsuario(usuarioId) {
        s.nombre AS servicio,
        c.nutricionista_id,
        n.nombre AS nutricionista,
-       c.fecha,
+       c.fecha::text AS fecha,
        c.hora,
        c.nombre,
        c.correo,
@@ -77,7 +77,7 @@ export async function buscarTodasLasCitas() {
        s.nombre AS servicio,
        c.nutricionista_id,
        n.nombre AS nutricionista,
-       c.fecha,
+       c.fecha::text AS fecha,
        c.hora,
        c.nombre,
        c.correo,
@@ -97,6 +97,7 @@ export async function existeHorario(
   nutricionistaId,
   fecha,
   hora,
+  idExcluir = null,
 ) {
   const resultado = await pool.query(
     'SELECT id ' +
@@ -104,12 +105,14 @@ export async function existeHorario(
       'WHERE nutricionista_id = $1 ' +
       'AND fecha = $2 ' +
       'AND hora = $3 ' +
-      'AND estado <> $4',
+      'AND estado <> $4 ' +
+      'AND ($5 IS NULL OR id <> $5)',
     [
       nutricionistaId,
       fecha,
       hora,
       'cancelada',
+      idExcluir,
     ],
   );
 
@@ -126,7 +129,7 @@ export async function buscarCitaPorId(id) {
        s.nombre AS servicio,
        c.nutricionista_id,
        n.nombre AS nutricionista,
-       c.fecha,
+       c.fecha::text AS fecha,
        c.hora,
        c.nombre,
        c.correo,
@@ -154,7 +157,7 @@ export async function actualizarCita(id, { fecha, hora, estado }) {
        usuario_id,
        servicio_id,
        nutricionista_id,
-       fecha,
+       fecha::text AS fecha,
        hora,
        nombre,
        correo,
