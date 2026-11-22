@@ -8,9 +8,6 @@ export async function crearCita(req, res) {
       nutricionistaId: req.body.nutricionistaId,
       fecha: req.body.fecha,
       hora: req.body.hora,
-      nombre: req.body.nombre,
-      correo: req.body.correo,
-      precio: req.body.precio,
     };
 
     const resultado = await citaService.crearCita(datos);
@@ -48,8 +45,15 @@ export async function obtenerCitas(req, res) {
 
 export async function obtenerCita(req, res) {
   try {
+    const id = Number(req.params.id);
+
+    if (!Number.isInteger(id) || id <= 0) {
+      return res.status(400).json({
+        error: "El id de la cita no es válido"
+      });
+    }
     const resultado = await citaService.obtenerCita(
-      Number(req.params.id),
+      id,
       req.usuario.id,
       req.usuario.rol,
     );
@@ -71,10 +75,14 @@ export async function obtenerCita(req, res) {
 
 export async function reprogramarCita(req, res) {
   try {
-    const resultado = await citaService.reprogramarCita(
-      Number(req.params.id),
-      req.body,
-    );
+    const id = Number(req.params.id);
+
+    if (!Number.isInteger(id) || id <= 0) {
+      return res.status(400).json({
+        error: "El id de la cita no es válido.",
+      });
+    }
+    const resultado = await citaService.reprogramarCita(id, req.body);
 
     if (!resultado.ok) {
       return res.status(resultado.estado).json({
@@ -85,7 +93,8 @@ export async function reprogramarCita(req, res) {
     res.status(resultado.estado).json(resultado.cita);
   } catch (error) {
     console.error(error);
-    res.status(500).json({
+
+    return res.status(500).json({
       error: 'No se pudo reprogramar la cita.',
     });
   }
@@ -93,20 +102,20 @@ export async function reprogramarCita(req, res) {
 
 export async function cancelarCita(req, res) {
   try {
-    const resultado = await citaService.cancelarCita(
-      Number(req.params.id),
-    );
+    const resultado = Number(req.params.id);
 
-    if (!resultado.ok) {
-      return res.status(resultado.estado).json({
+    if (!Number.isInteger(id) || id <= 0) {
+      return res.status(400).json({
         error: resultado.error,
       });
     }
 
-    res.status(resultado.estado).json(resultado.cita);
+    return res.status(resultado.estado).json(resultado.cita);
   } catch (error) {
     console.error(error);
-    res.status(500).json({
+    
+    
+    return res.status(500).json({
       error: 'No se pudo cancelar la cita.',
     });
   }

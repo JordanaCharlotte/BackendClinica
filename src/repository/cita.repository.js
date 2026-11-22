@@ -93,6 +93,30 @@ export async function buscarTodasLasCitas() {
   return rows;
 }
 
+export async function existeHorario(
+  nutricionistaId,
+  fecha,
+  hora,
+) {
+  const resultado = await pool.query(
+    'SELECT id ' +
+      'FROM citas ' +
+      'WHERE nutricionista_id = $1 ' +
+      'AND fecha = $2 ' +
+      'AND hora = $3 ' +
+      'AND estado <> $4',
+    [
+      nutricionistaId,
+      fecha,
+      hora,
+      'cancelada',
+    ],
+  );
+
+  return resultado.rows.length > 0;
+}
+
+
 export async function buscarCitaPorId(id) {
   const { rows } = await pool.query(
     `SELECT
