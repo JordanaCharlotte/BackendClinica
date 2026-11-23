@@ -211,6 +211,32 @@ export async function obtenerCitas(usuarioId, rol) {
   };
 }
 
+export async function obtenerCita(id, usuarioId, rol) {
+  const cita = await Cita.buscarCitaPorId(id);
+
+  if (!cita) {
+    return {
+      ok: false,
+      estado: 404,
+      error: 'La cita no existe.',
+    };
+  }
+
+  if (rol !== 'admin' && cita.usuario_id !== usuarioId) {
+    return {
+      ok: false,
+      estado: 403,
+      error: 'No tienes permiso para ver esta cita.',
+    };
+  }
+
+  return {
+    ok: true,
+    estado: 200,
+    cita,
+  };
+}
+
 export async function reprogramarCita(id, datos) {
   const citaActual = await Cita.buscarCitaPorId(id);
 
