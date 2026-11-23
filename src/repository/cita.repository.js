@@ -170,7 +170,7 @@ export async function existeHorario(
       'AND fecha = $2 ' +
       'AND hora = $3 ' +
       'AND estado <> $4 ' +
-      'AND ($5 IS NULL OR id <> $5)',
+      'AND ($5::integer IS NULL OR id <> $5::integer)',
     [
       nutricionistaId,
       fecha,
