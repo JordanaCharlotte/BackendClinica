@@ -1,0 +1,405 @@
+openapi: 3.0.3
+info:
+  title: API NutriVida
+  version: 1.0.0
+  description: >
+    Backend de la clínica NutriVida (Node.js + Express + PostgreSQL en AWS RDS).
+    Para probar las rutas protegidas: usa POST /auth/login, copia el token
+    y pégalo en el botón Authorize.
+servers:
+  - url: /api
+tags:
+  - name: Health
+    description: Estado del servidor y de la base de datos
+  - name: Auth
+    description: Registro, inicio de sesión y usuario actual (JWT)
+  - name: Usuarios
+    description: Administración de usuarios (solo admin)
+  - name: Citas
+    description: Agendamiento de citas
+  - name: Servicios
+    description: Catálogo de servicios
+  - name: Nutricionistas
+    description: Profesionales de la clínica
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  responses:
+    SinToken:
+      description: Falta el token o no es válido
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+          example: { error: 'Debes iniciar sesión.' }
+    SinPermiso:
+      description: El rol del usuario no tiene permiso
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+          example: { error: 'No tienes permiso para realizar esta acción.' }
+    NoEncontrado:
+      description: El recurso no existe
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    Validacion:
+      description: Datos inválidos
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErroresValidacion' }
+  schemas:
+    Error:
+      type: object
+      properties:
+        error: { type: string }
+        campo: { type: string }
+    ErroresValidacion:
+      type: object
+      properties:
+        errores:
+          type: object
+          additionalProperties: { type: string }
+          example: { correo: 'Ingresa un correo válido.' }
+    Usuario:
+      type: object
+      properties:
+        id: { type: integer, example: 1 }
+        run: { type: string, example: '11.111.111-1' }
+        nombre: { type: string, example: 'Admin' }
+        apellidos: { type: string, example: 'NutriVida' }
+        correo: { type: string, example: 'admin@clinica.cl' }
+        telefono: { type: string, example: '+56912345678' }
+        rol: { type: string, enum: [admin, cliente] }
+    Registro:
+      type: object
+      required: [run, nombre, apellidos, correo, password]
+      properties:
+        run: { type: string, example: '12.345.678-5' }
+        nombre: { type: string, example: 'Camila' }
+        apellidos: { type: string, example: 'Prueba Swagger' }
+        correo: { type: string, example: 'prueba.swagger@correo.cl' }
+        telefono: { type: string, example: '+56912345678' }
+        password: { type: string, example: 'Clave1234!' }
+        confirmarPassword: { type: string, example: 'Clave1234!' }
+    Login:
+      type: object
+      required: [correo, password]
+      properties:
+        correo: { type: string, example: 'admin@clinica.cl' }
+        password: { type: string, example: 'contraseña del admin' }
+    Sesion:
+      type: object
+      properties:
+        ok: { type: boolean, example: true }
+        usuario: { $ref: '#/components/schemas/Usuario' }
+        token: { type: string, example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...' }
+    UsuarioEdicion:
+      type: object
+      required: [run, nombre, apellidos, correo, rol]
+      properties:
+        run: { type: string, example: '12.345.678-5' }
+        nombre: { type: string, example: 'Camila' }
+        apellidos: { type: string, example: 'Prueba Editada' }
+        correo: { type: string, example: 'prueba.swagger@correo.cl' }
+        telefono: { type: string, example: '+56987654321' }
+        rol: { type: string, enum: [admin, cliente], example: cliente }
+        password: { type: string, description: 'Opcional. Vacío = mantener la actual.' }
+    Cita:
+      type: object
+      properties:
+        id: { type: integer, example: 1 }
+        usuario_id: { type: integer, example: 2 }
+        servicio_id: { type: integer, example: 1 }
+        nutricionista_id: { type: string, example: 'N01' }
+        fecha: { type: string, format: date, example: '2026-12-10' }
+        hora: { type: string, example: '10:00' }
+        nombre: { type: string, example: 'Camila Rojas' }
+        correo: { type: string, example: 'camila@correo.cl' }
+        precio: { type: integer, example: 35000 }
+        estado: { type: string, enum: [pendiente, confirmada, reprogramada, cancelada] }
+    NuevaCita:
+      type: object
+      properties:
+        servicioId: { type: integer, example: 1 }
+        nutricionistaId: { type: string, example: 'N01' }
+        fecha: { type: string, format: date, example: '2026-12-10' }
+        hora: { type: string, example: '10:00' }
+    Reprogramacion:
+      type: object
+      properties:
+        fecha: { type: string, format: date, example: '2026-12-15' }
+        hora: { type: string, example: '11:30' }
+    Servicio:
+      type: object
+      properties:
+        id: { type: integer, example: 1 }
+        codigo: { type: string, example: 'CN001' }
+        categoria: { type: string, example: 'Consulta' }
+        nombre: { type: string, example: 'Primera consulta nutricional' }
+        duracion: { type: string, example: '60 min' }
+        modalidad: { type: string, example: 'Presencial' }
+        precio: { type: integer, example: 35000 }
+        oferta: { type: boolean }
+        disponibilidad: { type: boolean }
+        cupos: { type: integer, example: 10 }
+        descripcion: { type: string }
+    Nutricionista:
+      type: object
+      properties:
+        id: { type: string, example: 'N01' }
+        nombre: { type: string, example: 'Camila Rojas' }
+        especialidad: { type: string }
+        dias: { type: string }
+        horario: { type: string }
+
+paths:
+  /health:
+    get:
+      tags: [Health]
+      summary: Comprueba que el servidor responde
+      responses:
+        '200': { description: Servidor activo }
+  /health/db:
+    get:
+      tags: [Health]
+      summary: Comprueba la conexión con PostgreSQL (RDS)
+      responses:
+        '200': { description: Base de datos conectada }
+
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Registra un cliente (contraseña con bcrypt) y devuelve su token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/Registro' }
+      responses:
+        '201':
+          description: Cuenta creada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Sesion' }
+        '400': { $ref: '#/components/responses/Validacion' }
+        '409':
+          description: Correo o RUN ya registrado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '429': { description: Demasiados intentos fallidos (máximo 10 cada 15 minutos) }
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Inicia sesión y devuelve un JWT
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/Login' }
+      responses:
+        '200':
+          description: Credenciales correctas
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Sesion' }
+        '400': { $ref: '#/components/responses/Validacion' }
+        '401':
+          description: Correo o contraseña incorrectos (mismo mensaje en ambos casos)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+              example: { ok: false, error: 'Correo o contraseña incorrectos.' }
+        '429': { description: Demasiados intentos fallidos (máximo 10 cada 15 minutos) }
+  /auth/me:
+    get:
+      tags: [Auth]
+      summary: Devuelve el usuario dueño del token
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Usuario autenticado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Usuario' }
+        '401': { $ref: '#/components/responses/SinToken' }
+        '404': { $ref: '#/components/responses/NoEncontrado' }
+
+  /usuarios:
+    get:
+      tags: [Usuarios]
+      summary: Lista todos los usuarios (sin contraseñas)
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Lista de usuarios
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Usuario' }
+        '401': { $ref: '#/components/responses/SinToken' }
+        '403': { $ref: '#/components/responses/SinPermiso' }
+  /usuarios/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: integer } }
+    put:
+      tags: [Usuarios]
+      summary: Modifica un usuario
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UsuarioEdicion' }
+      responses:
+        '200':
+          description: Usuario actualizado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Usuario' }
+        '400': { $ref: '#/components/responses/Validacion' }
+        '401': { $ref: '#/components/responses/SinToken' }
+        '403': { $ref: '#/components/responses/SinPermiso' }
+        '404': { $ref: '#/components/responses/NoEncontrado' }
+        '409': { description: Correo o RUN ya usado por otro usuario }
+    delete:
+      tags: [Usuarios]
+      summary: Elimina un usuario (no permite borrar al único administrador)
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: Usuario eliminado }
+        '401': { $ref: '#/components/responses/SinToken' }
+        '403': { $ref: '#/components/responses/SinPermiso' }
+        '404': { $ref: '#/components/responses/NoEncontrado' }
+        '409': { description: No se puede eliminar al único administrador }
+
+  /citas:
+    get:
+      tags: [Citas]
+      summary: Lista las citas
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Lista de citas
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Cita' }
+        '401': { $ref: '#/components/responses/SinToken' }
+    post:
+      tags: [Citas]
+      summary: Agenda una cita
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/NuevaCita' }
+      responses:
+        '201':
+          description: Cita creada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Cita' }
+        '400': { $ref: '#/components/responses/Validacion' }
+        '401': { $ref: '#/components/responses/SinToken' }
+  /citas/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: integer } }
+    get:
+      tags: [Citas]
+      summary: Obtiene una cita por id
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Cita encontrada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Cita' }
+        '401': { $ref: '#/components/responses/SinToken' }
+        '404': { $ref: '#/components/responses/NoEncontrado' }
+    delete:
+      tags: [Citas]
+      summary: Cancela una cita (solo admin)
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: Cita cancelada }
+        '401': { $ref: '#/components/responses/SinToken' }
+        '403': { $ref: '#/components/responses/SinPermiso' }
+        '404': { $ref: '#/components/responses/NoEncontrado' }
+  /citas/{id}/reprogramar:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: integer } }
+    patch:
+      tags: [Citas]
+      summary: Reprograma una cita (solo admin)
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/Reprogramacion' }
+      responses:
+        '200': { description: Cita reprogramada }
+        '400': { $ref: '#/components/responses/Validacion' }
+        '401': { $ref: '#/components/responses/SinToken' }
+        '403': { $ref: '#/components/responses/SinPermiso' }
+        '404': { $ref: '#/components/responses/NoEncontrado' }
+
+  /servicios:
+    get:
+      tags: [Servicios]
+      summary: Lista el catálogo de servicios (público)
+      responses:
+        '200':
+          description: Lista de servicios
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Servicio' }
+  /servicios/{id}:
+    get:
+      tags: [Servicios]
+      summary: Obtiene un servicio por id
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200':
+          description: Servicio encontrado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Servicio' }
+        '404': { $ref: '#/components/responses/NoEncontrado' }
+
+  /nutricionistas:
+    get:
+      tags: [Nutricionistas]
+      summary: Lista los nutricionistas (público)
+      responses:
+        '200':
+          description: Lista de nutricionistas
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Nutricionista' }
+  /nutricionistas/{id}:
+    get:
+      tags: [Nutricionistas]
+      summary: Obtiene un nutricionista por id
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Nutricionista encontrado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Nutricionista' }
+        '404': { $ref: '#/components/responses/NoEncontrado' }

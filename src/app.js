@@ -8,6 +8,9 @@ import usuarioRoute from './route/usuario.route.js';
 import citaRoute from './route/cita.route.js';
 import servicioRoute from './route/servicio.route.js';
 import nutricionistaRoute from './route/nutricionista.route.js';
+import fs from 'fs';
+import * as yaml from 'js-yaml';
+import swaggerUi from 'swagger-ui-express';
 
 const app = express();
 
@@ -20,6 +23,10 @@ app.use('/api/usuarios', usuarioRoute);
 app.use('/api/citas', citaRoute);
 app.use('/api/servicios', servicioRoute);
 app.use('/api/nutricionistas', nutricionistaRoute);
+
+// Documentación de la API con Swagger: http://localhost:3000/api-docs
+const documentoApi = yaml.load(fs.readFileSync(new URL('../docs/openapi.yaml', import.meta.url), 'utf8'));
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(documentoApi));
 
 
 // Si la ruta no existe: 404
