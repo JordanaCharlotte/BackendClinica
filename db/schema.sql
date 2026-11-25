@@ -1,5 +1,6 @@
 -- Tablas del backend de la clínica (esquema "app" en la RDS).
 -- Mismos datos y nombres que src/data/ del frontend.
+CREATE SCHEMA IF NOT EXISTS app;
 SET search_path TO app;
 
 -- Usuarios (data/usuarios.js). La contraseña se guarda con hash, nunca en texto plano.
