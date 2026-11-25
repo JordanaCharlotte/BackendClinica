@@ -2,6 +2,8 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
+import swaggerUi from 'swagger-ui-express';
+import swaggerDocument from './config/swagger.js';
 import healthRoute from './route/health.route.js';
 import authRoute from './route/auth.route.js';
 import usuarioRoute from './route/usuario.route.js';
@@ -20,6 +22,7 @@ app.use('/api/usuarios', usuarioRoute);
 app.use('/api/citas', citaRoute);
 app.use('/api/servicios', servicioRoute);
 app.use('/api/nutricionistas', nutricionistaRoute);
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 
 // Si la ruta no existe: 404
