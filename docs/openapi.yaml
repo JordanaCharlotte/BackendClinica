@@ -78,10 +78,10 @@ components:
       type: object
       required: [run, nombre, apellidos, correo, password]
       properties:
-        run: { type: string, example: '12.345.678-5' }
+        run: { type: string, example: '9.876.543-3' }
         nombre: { type: string, example: 'Camila' }
         apellidos: { type: string, example: 'Prueba Swagger' }
-        correo: { type: string, example: 'prueba.swagger@correo.cl' }
+        correo: { type: string, example: 'demo.swagger@correo.cl' }
         telefono: { type: string, example: '+56912345678' }
         password: { type: string, example: 'Clave1234!' }
         confirmarPassword: { type: string, example: 'Clave1234!' }
@@ -101,10 +101,10 @@ components:
       type: object
       required: [run, nombre, apellidos, correo, rol]
       properties:
-        run: { type: string, example: '12.345.678-5' }
+        run: { type: string, example: '9.876.543-3' }
         nombre: { type: string, example: 'Camila' }
         apellidos: { type: string, example: 'Prueba Editada' }
-        correo: { type: string, example: 'prueba.swagger@correo.cl' }
+        correo: { type: string, example: 'demo.swagger@correo.cl' }
         telefono: { type: string, example: '+56987654321' }
         rol: { type: string, enum: [admin, cliente], example: cliente }
         password: { type: string, description: 'Opcional. Vacío = mantener la actual.' }
