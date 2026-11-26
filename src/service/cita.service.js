@@ -19,7 +19,7 @@ function validarFecha(fecha) {
     return 'La fecha debe tener el formato AAAA-MM-DD.';
   }
 
-  const fechaSeleccionada = new Date(`${datos.fecha}T00:00:00`);
+  const fechaSeleccionada = new Date(fecha + 'T00:00:00');
   const hoy = new Date();
 
   hoy.setHours(0, 0, 0, 0);
@@ -135,7 +135,14 @@ export async function crearCita(datos) {
   let cita;
 
   try {
-    cita = await Cita.crearCita(datos);
+    const datosCita = {
+      ...datos,
+      nombre: (usuario.nombre + ' ' + usuario.apellidos).trim(),
+      correo: usuario.correo,
+      precio: servicio.precio,
+    };
+
+cita = await Cita.crearCita(datosCita);
   } catch (error) {
     if (error.code === 'SERVICIO_NO_EXISTE') {
       return {

@@ -442,7 +442,200 @@ const swaggerDocument = {
         },
       },
     },
-  },
+  
+      '/api/citas': {
+      get: {
+        summary: 'Listar citas',
+        tags: ['Citas'],
+        security: [{ bearerAuth: [] }],
+        responses: {
+          200: {
+            description: 'Citas obtenidas correctamente',
+          },
+          401: {
+            description: 'Token faltante o inválido',
+          },
+        },
+      },
+
+      post: {
+        summary: 'Crear una cita',
+        tags: ['Citas'],
+        security: [{ bearerAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: [
+                  'servicioId',
+                  'nutricionistaId',
+                  'fecha',
+                  'hora',
+                ],
+                properties: {
+                  servicioId: {
+                    type: 'integer',
+                    example: 5,
+                  },
+                  nutricionistaId: {
+                    type: 'string',
+                    example: 'NUT003',
+                  },
+                  fecha: {
+                    type: 'string',
+                    format: 'date',
+                    example: '2026-12-25',
+                  },
+                  hora: {
+                    type: 'string',
+                    example: '09:00',
+                  },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          201: {
+            description: 'Cita creada correctamente',
+          },
+          400: {
+            description: 'Datos inválidos',
+          },
+          401: {
+            description: 'Token faltante o inválido',
+          },
+          404: {
+            description: 'Servicio o nutricionista no encontrado',
+          },
+          409: {
+            description: 'El horario ya está ocupado',
+          },
+        },
+      },
+    },
+
+    '/api/citas/{id}': {
+      parameters: [
+        {
+          name: 'id',
+          in: 'path',
+          required: true,
+          description: 'ID de la cita',
+          schema: {
+            type: 'integer',
+            example: 7,
+          },
+        },
+      ],
+
+      get: {
+        summary: 'Obtener una cita por ID',
+        tags: ['Citas'],
+        security: [{ bearerAuth: [] }],
+        responses: {
+          200: {
+            description: 'Cita obtenida correctamente',
+          },
+          400: {
+            description: 'ID inválido',
+          },
+          401: {
+            description: 'Token faltante o inválido',
+          },
+          404: {
+            description: 'Cita no encontrada',
+          },
+        },
+      },
+
+      delete: {
+        summary: 'Cancelar una cita',
+        tags: ['Citas'],
+        security: [{ bearerAuth: [] }],
+        responses: {
+          200: {
+            description: 'Cita cancelada correctamente',
+          },
+          400: {
+            description: 'ID inválido',
+          },
+          401: {
+            description: 'Token faltante o inválido',
+          },
+          403: {
+            description: 'No tienes permisos para cancelar la cita',
+          },
+          404: {
+            description: 'Cita no encontrada',
+          },
+        },
+      },
+    },
+
+    '/api/citas/{id}/reprogramar': {
+      patch: {
+        summary: 'Reprogramar una cita',
+        tags: ['Citas'],
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            name: 'id',
+            in: 'path',
+            required: true,
+            description: 'ID de la cita',
+            schema: {
+              type: 'integer',
+              example: 7,
+            },
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['fecha', 'hora'],
+                properties: {
+                  fecha: {
+                    type: 'string',
+                    format: 'date',
+                    example: '2026-12-26',
+                  },
+                  hora: {
+                    type: 'string',
+                    example: '10:00',
+                  },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: 'Cita reprogramada correctamente',
+          },
+          400: {
+            description: 'Datos inválidos',
+          },
+          401: {
+            description: 'Token faltante o inválido',
+          },
+          403: {
+            description: 'No tienes permisos para reprogramar la cita',
+          },
+          404: {
+            description: 'Cita no encontrada',
+          },
+          409: {
+            description: 'El horario ya está ocupado',
+          },
+        },
+      },
+    },},
 };
 
 export default swaggerDocument;
